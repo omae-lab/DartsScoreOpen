@@ -1,6 +1,7 @@
-package com.example.dartsscore.engine
+package engine
 
 import com.example.dartsscore.DartHit
+import engine.GameState
 
 interface GameEngine {
 

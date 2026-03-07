@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
+import ui.PrecisionAimOverlay
 import kotlin.math.*
 
 private val SEGMENTS = listOf(
@@ -33,6 +34,7 @@ data class BoardRadii(
 @Composable
 fun DartBoard(
     modifier: Modifier = Modifier,
+    hitHistory: List<Offset>,
     onHit: (DartHit) -> Unit
 ) {
 
@@ -42,8 +44,6 @@ fun DartBoard(
 
     var showPrecision by remember { mutableStateOf(false) }
     var precisionStart by remember { mutableStateOf(Offset.Zero) }
-
-    val hitHistory = remember { mutableStateListOf<Offset>() }
 
     Canvas(
         modifier = modifier
@@ -57,8 +57,6 @@ fun DartBoard(
 
                         val radii = boardRadii ?: return@detectTapGestures
 
-                        hitHistory.add(offset)
-
                         val hit = calculateScore(
                             offset,
                             boardCenter,
@@ -66,7 +64,10 @@ fun DartBoard(
                             radii
                         )
 
-                        hit?.let { onHit(it) }
+                        // 修正: DartHit を生成して1つ渡す
+                        hit?.let { dartHit ->
+                            onHit(DartHit(dartHit.number, dartHit.multiplier, offset))
+                        }
                     },
 
                     onLongPress = { offset ->
@@ -85,9 +86,7 @@ fun DartBoard(
         val radii = boardRadii!!
 
         drawDartBoard(boardCenter, boardRadius, radii)
-
         drawNumbers(boardCenter, boardRadius, radii)
-
         drawHeatMap(hitHistory, boardRadius)
     }
 
@@ -102,8 +101,7 @@ fun DartBoard(
 
             onConfirm = { hitOffset ->
 
-                hitHistory.add(hitOffset)
-
+                // 修正: offset ではなく hitOffset を使う
                 val hit = calculateScore(
                     hitOffset,
                     boardCenter,
@@ -111,7 +109,14 @@ fun DartBoard(
                     boardRadii!!
                 )
 
-                hit?.let { onHit(it) }
+                hit?.let {
+                    val dartHit = DartHit(
+                        number = it.number,
+                        multiplier = it.multiplier,
+                        offset = hitOffset
+                    )
+                    onHit(dartHit)
+                }
 
                 showPrecision = false
             },
@@ -139,9 +144,7 @@ fun androidx.compose.ui.graphics.drawscope.DrawScope.drawHeatMap(
     hits: List<Offset>,
     boardRadius: Float
 ) {
-
     hits.forEach {
-
         drawCircle(
             color = Color.Yellow.copy(alpha = 0.6f),
             radius = boardRadius * 0.015f,
@@ -180,7 +183,6 @@ fun androidx.compose.ui.graphics.drawscope.DrawScope.drawNumbers(
         val y = boardCenter.y + textRadius * sin(angleRad).toFloat()
 
         drawIntoCanvas {
-
             it.nativeCanvas.drawText(
                 number.toString(),
                 x,
@@ -203,8 +205,8 @@ fun calculateScore(
     val distance = sqrt(dx * dx + dy * dy)
 
     if (distance > boardRadius) return null
-    if (distance <= radii.innerBull) return DartHit(25, 2)
-    if (distance <= radii.outerBull) return DartHit(25, 1)
+    if (distance <= radii.innerBull) return DartHit(25, 2, offset)
+    if (distance <= radii.outerBull) return DartHit(25, 1, offset)
 
     var angle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat()
 
@@ -218,15 +220,12 @@ fun calculateScore(
     val number = SEGMENTS[index]
 
     return when {
-
         distance in radii.tripleInner..radii.tripleOuter ->
-            DartHit(number, 3)
-
+            DartHit(number, 3, offset)
         distance in radii.doubleInner..radii.doubleOuter ->
-            DartHit(number, 2)
-
+            DartHit(number, 2, offset)
         else ->
-            DartHit(number, 1)
+            DartHit(number, 1, offset)
     }
 }
 
