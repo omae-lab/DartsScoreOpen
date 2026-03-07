@@ -40,128 +40,156 @@ fun DartBoard(
     var boardCenter by remember { mutableStateOf(Offset.Zero) }
     var boardRadii by remember { mutableStateOf<BoardRadii?>(null) }
 
+    var showPrecision by remember { mutableStateOf(false) }
+    var precisionStart by remember { mutableStateOf(Offset.Zero) }
+
+    val hitHistory = remember { mutableStateListOf<Offset>() }
+
     Canvas(
         modifier = modifier
             .aspectRatio(1f)
             .fillMaxSize()
             .pointerInput(boardRadius, boardCenter, boardRadii) {
-                detectTapGestures { offset ->
-                    val radii = boardRadii ?: return@detectTapGestures
-                    val hit = calculateScore(
-                        offset,
-                        boardCenter,
-                        boardRadius,
-                        radii
-                    )
-                    hit?.let { onHit(it) }
-                }
+
+                detectTapGestures(
+
+                    onTap = { offset ->
+
+                        val radii = boardRadii ?: return@detectTapGestures
+
+                        hitHistory.add(offset)
+
+                        val hit = calculateScore(
+                            offset,
+                            boardCenter,
+                            boardRadius,
+                            radii
+                        )
+
+                        hit?.let { onHit(it) }
+                    },
+
+                    onLongPress = { offset ->
+
+                        precisionStart = offset
+                        showPrecision = true
+                    }
+                )
             }
     ) {
 
         boardRadius = size.minDimension / 2f
         boardCenter = center
-        boardRadii = createRadii(boardRadius)
+        boardRadii = createSoftTipRadii(boardRadius)
 
         val radii = boardRadii!!
 
-        val segmentAngle = 360f / 20f
-        val halfSegment = segmentAngle / 2f
-        val startOffset = -90f - halfSegment
+        drawDartBoard(boardCenter, boardRadius, radii)
 
-        val doubleCenter = (radii.doubleInner + radii.doubleOuter) / 2f
-        val doubleThickness = radii.doubleOuter - radii.doubleInner
+        drawNumbers(boardCenter, boardRadius, radii)
 
-        val tripleCenter = (radii.tripleInner + radii.tripleOuter) / 2f
-        val tripleThickness = radii.tripleOuter - radii.tripleInner
+        drawHeatMap(hitHistory, boardRadius)
+    }
 
-        SEGMENTS.forEachIndexed { index, number ->
+    if (showPrecision && boardRadii != null) {
 
-            val startAngle = startOffset + index * segmentAngle
-            val baseColor =
-                if (index % 2 == 0) Color(0xFF111111) else Color(0xFFEEEEEE)
-            val ringColor =
-                if (index % 2 == 0) Color.Red else Color.Blue
+        PrecisionAimOverlay(
 
-            drawArc(
-                color = baseColor,
-                startAngle = startAngle,
-                sweepAngle = segmentAngle,
-                useCenter = true,
-                size = Size(radii.doubleInner * 2, radii.doubleInner * 2),
-                topLeft = Offset(
-                    boardCenter.x - radii.doubleInner,
-                    boardCenter.y - radii.doubleInner
+            startOffset = precisionStart,
+            boardCenter = boardCenter,
+            boardRadius = boardRadius,
+            radii = boardRadii!!,
+
+            onConfirm = { hitOffset ->
+
+                hitHistory.add(hitOffset)
+
+                val hit = calculateScore(
+                    hitOffset,
+                    boardCenter,
+                    boardRadius,
+                    boardRadii!!
                 )
-            )
 
-            drawArc(
-                color = ringColor,
-                startAngle = startAngle,
-                sweepAngle = segmentAngle,
-                useCenter = false,
-                style = Stroke(width = tripleThickness),
-                size = Size(tripleCenter * 2, tripleCenter * 2),
-                topLeft = Offset(
-                    boardCenter.x - tripleCenter,
-                    boardCenter.y - tripleCenter
-                )
-            )
+                hit?.let { onHit(it) }
 
-            drawArc(
-                color = ringColor,
-                startAngle = startAngle,
-                sweepAngle = segmentAngle,
-                useCenter = false,
-                style = Stroke(width = doubleThickness),
-                size = Size(doubleCenter * 2, doubleCenter * 2),
-                topLeft = Offset(
-                    boardCenter.x - doubleCenter,
-                    boardCenter.y - doubleCenter
-                )
-            )
-        }
+                showPrecision = false
+            },
 
-        val textRadius = (radii.tripleOuter + radii.doubleInner) / 2f
-
-        val textPaint = Paint().apply {
-            color = android.graphics.Color.WHITE
-            textAlign = Paint.Align.CENTER
-            textSize = boardRadius * 0.08f
-            isAntiAlias = true
-            isFakeBoldText = true
-        }
-
-        SEGMENTS.forEachIndexed { index, number ->
-
-            val angleDeg = startOffset + index * segmentAngle + halfSegment
-            val angleRad = Math.toRadians(angleDeg.toDouble())
-
-            val x = boardCenter.x + textRadius * cos(angleRad).toFloat()
-            val y = boardCenter.y + textRadius * sin(angleRad).toFloat()
-
-            drawIntoCanvas {
-                it.nativeCanvas.drawText(
-                    number.toString(),
-                    x,
-                    y + textPaint.textSize / 3,
-                    textPaint
-                )
+            onCancel = {
+                showPrecision = false
             }
-        }
-
-        drawCircle(Color.Red, radius = radii.outerBull, center = boardCenter)
-        drawCircle(Color.Black, radius = radii.innerBull, center = boardCenter)
+        )
     }
 }
 
-private fun createRadii(boardRadius: Float) = BoardRadii(
+private fun createSoftTipRadii(boardRadius: Float) = BoardRadii(
+
+    innerBull = boardRadius * 0.07f,
+    outerBull = boardRadius * 0.16f,
+
     tripleInner = boardRadius * 0.40f,
     tripleOuter = boardRadius * 0.55f,
+
     doubleInner = boardRadius * 0.80f,
-    doubleOuter = boardRadius * 0.95f,
-    outerBull = boardRadius * 0.15f,
-    innerBull = boardRadius * 0.07f
+    doubleOuter = boardRadius * 0.95f
 )
+
+fun androidx.compose.ui.graphics.drawscope.DrawScope.drawHeatMap(
+    hits: List<Offset>,
+    boardRadius: Float
+) {
+
+    hits.forEach {
+
+        drawCircle(
+            color = Color.Yellow.copy(alpha = 0.6f),
+            radius = boardRadius * 0.015f,
+            center = it
+        )
+    }
+}
+
+fun androidx.compose.ui.graphics.drawscope.DrawScope.drawNumbers(
+    boardCenter: Offset,
+    boardRadius: Float,
+    radii: BoardRadii
+) {
+
+    val segmentAngle = 360f / 20f
+    val halfSegment = segmentAngle / 2f
+    val startOffset = -90f - halfSegment
+
+    val textRadius = radii.doubleOuter + boardRadius * 0.05f
+
+    val textPaint = Paint().apply {
+
+        color = android.graphics.Color.WHITE
+        textAlign = Paint.Align.CENTER
+        textSize = boardRadius * 0.08f
+        isFakeBoldText = true
+        isAntiAlias = true
+    }
+
+    SEGMENTS.forEachIndexed { index, number ->
+
+        val angleDeg = startOffset + index * segmentAngle + halfSegment
+        val angleRad = Math.toRadians(angleDeg.toDouble())
+
+        val x = boardCenter.x + textRadius * cos(angleRad).toFloat()
+        val y = boardCenter.y + textRadius * sin(angleRad).toFloat()
+
+        drawIntoCanvas {
+
+            it.nativeCanvas.drawText(
+                number.toString(),
+                x,
+                y + textPaint.textSize / 3,
+                textPaint
+            )
+        }
+    }
+}
 
 fun calculateScore(
     offset: Offset,
@@ -179,6 +207,7 @@ fun calculateScore(
     if (distance <= radii.outerBull) return DartHit(25, 1)
 
     var angle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat()
+
     angle += 90f
     if (angle < 0f) angle += 360f
 
@@ -189,11 +218,85 @@ fun calculateScore(
     val number = SEGMENTS[index]
 
     return when {
+
         distance in radii.tripleInner..radii.tripleOuter ->
             DartHit(number, 3)
+
         distance in radii.doubleInner..radii.doubleOuter ->
             DartHit(number, 2)
+
         else ->
             DartHit(number, 1)
     }
+}
+
+fun androidx.compose.ui.graphics.drawscope.DrawScope.drawDartBoard(
+    boardCenter: Offset,
+    boardRadius: Float,
+    radii: BoardRadii
+) {
+
+    val segmentAngle = 360f / 20f
+    val halfSegment = segmentAngle / 2f
+    val startOffset = -90f - halfSegment
+
+    val doubleCenter = (radii.doubleInner + radii.doubleOuter) / 2f
+    val doubleThickness = radii.doubleOuter - radii.doubleInner
+
+    val tripleCenter = (radii.tripleInner + radii.tripleOuter) / 2f
+    val tripleThickness = radii.tripleOuter - radii.tripleInner
+
+    SEGMENTS.forEachIndexed { index, _ ->
+
+        val startAngle = startOffset + index * segmentAngle
+
+        val baseColor =
+            if (index % 2 == 0) Color(0xFF111111)
+            else Color(0xFFEEEEEE)
+
+        val ringColor =
+            if (index % 2 == 0) Color.Red
+            else Color.Blue
+
+        drawArc(
+            color = baseColor,
+            startAngle = startAngle,
+            sweepAngle = segmentAngle,
+            useCenter = true,
+            size = Size(radii.doubleInner * 2, radii.doubleInner * 2),
+            topLeft = Offset(
+                boardCenter.x - radii.doubleInner,
+                boardCenter.y - radii.doubleInner
+            )
+        )
+
+        drawArc(
+            color = ringColor,
+            startAngle = startAngle,
+            sweepAngle = segmentAngle,
+            useCenter = false,
+            style = Stroke(width = tripleThickness),
+            size = Size(tripleCenter * 2, tripleCenter * 2),
+            topLeft = Offset(
+                boardCenter.x - tripleCenter,
+                boardCenter.y - tripleCenter
+            )
+        )
+
+        drawArc(
+            color = ringColor,
+            startAngle = startAngle,
+            sweepAngle = segmentAngle,
+            useCenter = false,
+            style = Stroke(width = doubleThickness),
+            size = Size(doubleCenter * 2, doubleCenter * 2),
+            topLeft = Offset(
+                boardCenter.x - doubleCenter,
+                boardCenter.y - doubleCenter
+            )
+        )
+    }
+
+    drawCircle(Color.Red, radii.outerBull, boardCenter)
+    drawCircle(Color.Black, radii.innerBull, boardCenter)
 }
