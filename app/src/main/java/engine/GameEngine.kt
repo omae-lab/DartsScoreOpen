@@ -1,13 +1,45 @@
-package engine
+package com.example.dartsscore.engine
 
 import com.example.dartsscore.DartHit
-import engine.GameState
 
 interface GameEngine {
 
-    fun addHit(hit: DartHit)
+    data class AddHitResult(
+        val roundHits: List<DartHit>,
+        val totalScore: Int,
+        val totalDarts: Int,
+        val turnFinished: Boolean
+    )
 
-    fun undo()
+    data class UndoResult(
+        val roundHits: List<DartHit>,
+        val roundHistory: List<List<DartHit>>,
+        val totalScore: Int,
+        val totalDarts: Int
+    )
 
-    fun getState(): GameState
+    data class FinishTurnResult(
+        val roundHits: List<DartHit>,
+        val roundHistory: List<List<DartHit>>,
+        val turnFinished: Boolean
+    )
+
+    fun addHit(
+        hit: DartHit,
+        currentRoundHits: List<DartHit>,
+        totalScore: Int,
+        totalDarts: Int
+    ): AddHitResult
+
+    fun undoLastHit(
+        currentRoundHits: List<DartHit>,
+        roundHistory: List<List<DartHit>>,
+        totalScore: Int,
+        totalDarts: Int
+    ): UndoResult
+
+    fun finishTurn(
+        currentRoundHits: List<DartHit>,
+        roundHistory: List<List<DartHit>>
+    ): FinishTurnResult
 }

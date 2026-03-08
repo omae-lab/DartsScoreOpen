@@ -6,7 +6,12 @@ import com.example.dartsscore.data.dao.*
 import com.example.dartsscore.data.entity.*
 
 @Database(
-    entities = [Player::class, Game::class, Throw::class],
+    entities = [
+        Player::class,
+        Game::class,
+        GamePlayer::class,
+        Round::class,
+        Throw::class],
     version = 1
 )
 abstract class AppDatabase : RoomDatabase() {

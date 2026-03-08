@@ -1,36 +1,121 @@
-package engine
+package com.example.dartsscore.engine
 
 import com.example.dartsscore.DartHit
 
-class CountUpEngine(private val maxRounds: Int = 8) {
+class CountUpEngine(
+    private val maxRounds: Int? = 8
+) : GameEngine {
+    override fun addHit(
+        hit: DartHit,
+        currentRoundHits: List<DartHit>,
+        totalScore: Int,
+        totalDarts: Int
+    ): GameEngine.AddHitResult {
 
-    private var currentRound = 1
-    private val rounds = mutableListOf<MutableList<DartHit>>()
-    var totalScore = 0
-        private set
+        val newRoundHits = currentRoundHits.toMutableList()
+        newRoundHits.add(hit)
 
-    val isFinished: Boolean
-        get() = currentRound > maxRounds
+        val newTotalScore = totalScore + hit.score
+        val newTotalDarts = totalDarts + 1
 
-    fun addHit(hit: DartHit) {
-        totalScore += hit.score
-        if (rounds.size < currentRound) {
-            rounds.add(mutableListOf(hit))
-        } else {
-            rounds[currentRound - 1].add(hit)
+        val turnFinished = newRoundHits.size == 3
+
+        return GameEngine.AddHitResult(
+            newRoundHits,
+            newTotalScore,
+            newTotalDarts,
+            turnFinished
+        )
+    }
+
+    override fun undoLastHit(
+        currentRoundHits: List<DartHit>,
+        roundHistory: List<List<DartHit>>,
+        totalScore: Int,
+        totalDarts: Int
+    ): GameEngine.UndoResult {
+
+        val newRoundHits = currentRoundHits.toMutableList()
+        val newRoundHistory = roundHistory.toMutableList()
+
+        var newTotalScore = totalScore
+        var newTotalDarts = totalDarts
+
+        if (newRoundHits.isNotEmpty()) {
+
+            val last = newRoundHits.removeLast()
+
+            newTotalScore -= last.score
+            newTotalDarts -= 1
+
+            return GameEngine.UndoResult(
+                newRoundHits,
+                newRoundHistory,
+                newTotalScore,
+                newTotalDarts
+            )
         }
-        if (rounds[currentRound - 1].size == 3) currentRound++
+
+        if (newRoundHistory.isNotEmpty()) {
+
+            val lastRound = newRoundHistory.removeLast()
+
+            newRoundHits.addAll(lastRound)
+
+            val lastHit = newRoundHits.removeLast()
+
+            newTotalScore -= lastHit.score
+            newTotalDarts -= 1
+        }
+
+        return GameEngine.UndoResult(
+            newRoundHits,
+            newRoundHistory,
+            newTotalScore,
+            newTotalDarts
+        )
     }
 
-    fun undoLastHit(): DartHit? {
-        if (rounds.isEmpty()) return null
-        val lastRound = rounds.last()
-        val removed = lastRound.removeLast()
-        totalScore -= removed.score
-        if (lastRound.isEmpty()) rounds.removeLast()
-        if (currentRound > 1 && lastRound.isEmpty()) currentRound--
-        return removed
+    override fun finishTurn(
+        currentRoundHits: List<DartHit>,
+        roundHistory: List<List<DartHit>>
+    ): GameEngine.FinishTurnResult {
+
+        if (currentRoundHits.isEmpty()) {
+            return GameEngine.FinishTurnResult(
+                currentRoundHits,
+                roundHistory,
+                false
+            )
+        }
+
+        val newHistory = roundHistory.toMutableList()
+        newHistory.add(currentRoundHits.toList())
+
+        return GameEngine.FinishTurnResult(
+            emptyList(),
+            newHistory,
+            false
+        )
     }
 
-    fun getRoundHits(): List<List<DartHit>> = rounds
+    data class AddHitResult(
+        val roundHits: List<DartHit>,
+        val totalScore: Int,
+        val totalDarts: Int,
+        val turnFinished: Boolean
+    )
+
+    data class UndoResult(
+        val roundHits: List<DartHit>,
+        val roundHistory: List<List<DartHit>>,
+        val totalScore: Int,
+        val totalDarts: Int
+    )
+
+    data class FinishTurnResult(
+        val roundHits: List<DartHit>,
+        val roundHistory: List<List<DartHit>>,
+        val turnFinished: Boolean
+    )
 }

@@ -5,7 +5,8 @@ import androidx.room.PrimaryKey
 
 @Entity
 data class Round(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
     val gameId: Long,
     val playerId: Long,
     val roundNumber: Int

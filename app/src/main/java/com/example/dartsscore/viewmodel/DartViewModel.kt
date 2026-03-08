@@ -2,8 +2,15 @@ package com.example.dartsscore
 
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
+import com.example.dartsscore.data.entity.GameType
+import com.example.dartsscore.engine.CountUpEngine
+import com.example.dartsscore.engine.GameEngine
+import com.example.dartsscore.engine.GameEngineFactory
 
 class DartViewModel : ViewModel() {
+
+    private var engine: GameEngine =
+        GameEngineFactory.create(GameType.COUNT_UP)
 
     private val _currentRoundHits = mutableStateListOf<DartHit>()
     val currentRoundHits: List<DartHit> = _currentRoundHits
@@ -27,30 +34,47 @@ class DartViewModel : ViewModel() {
             else (_totalScore.value.toFloat() / _totalDarts.value) * 3f
 
 
+    /*fun startGame(gameType: GameType) {
+
+        engine = GameEngineFactory.create(gameType)
+
+        resetGame()
+    }*/
+
     fun addHit(hit: DartHit) {
 
         if (_turnFinished.value) return
 
-        _currentRoundHits.add(hit)
+        val result = engine.addHit(
+            hit,
+            _currentRoundHits,
+            _totalScore.value,
+            _totalDarts.value
+        )
 
-        _totalScore.value += hit.score
-        _totalDarts.value += 1
+        _currentRoundHits.clear()
+        _currentRoundHits.addAll(result.roundHits)
 
-        if (_currentRoundHits.size == 3) {
-            _turnFinished.value = true
-        }
+        _totalScore.value = result.totalScore
+        _totalDarts.value = result.totalDarts
+        _turnFinished.value = result.turnFinished
     }
 
 
     fun finishTurn() {
 
-        if (_currentRoundHits.isEmpty()) return
-
-        _roundHistory.add(_currentRoundHits.toList())
+        val result = engine.finishTurn(
+            _currentRoundHits,
+            _roundHistory
+        )
 
         _currentRoundHits.clear()
+        _currentRoundHits.addAll(result.roundHits)
 
-        _turnFinished.value = false
+        _roundHistory.clear()
+        _roundHistory.addAll(result.roundHistory)
+
+        _turnFinished.value = result.turnFinished
     }
 
 
@@ -58,27 +82,21 @@ class DartViewModel : ViewModel() {
 
         _turnFinished.value = false
 
-        if (_currentRoundHits.isNotEmpty()) {
+        val result = engine.undoLastHit(
+            _currentRoundHits,
+            _roundHistory,
+            _totalScore.value,
+            _totalDarts.value
+        )
 
-            val last = _currentRoundHits.removeLast()
+        _currentRoundHits.clear()
+        _currentRoundHits.addAll(result.roundHits)
 
-            _totalScore.value -= last.score
-            _totalDarts.value -= 1
+        _roundHistory.clear()
+        _roundHistory.addAll(result.roundHistory)
 
-            return
-        }
-
-        if (_roundHistory.isNotEmpty()) {
-
-            val lastRound = _roundHistory.removeLast()
-
-            _currentRoundHits.addAll(lastRound)
-
-            val lastHit = _currentRoundHits.removeLast()
-
-            _totalScore.value -= lastHit.score
-            _totalDarts.value -= 1
-        }
+        _totalScore.value = result.totalScore
+        _totalDarts.value = result.totalDarts
     }
 
 
