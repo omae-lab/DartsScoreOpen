@@ -10,7 +10,7 @@ import com.example.dartsscore.engine.GameEngineFactory
 class DartViewModel : ViewModel() {
 
     private var engine: GameEngine =
-        GameEngineFactory.create(GameType.COUNT_UP)
+        GameEngineFactory.create(GameType.ZERO_ONE_301)
 
     private val _currentRoundHits = mutableStateListOf<DartHit>()
     val currentRoundHits: List<DartHit> = _currentRoundHits
@@ -21,11 +21,21 @@ class DartViewModel : ViewModel() {
     private val _turnFinished = mutableStateOf(false)
     val turnFinished: State<Boolean> = _turnFinished
 
-    private val _totalScore = mutableStateOf(0)
+    private val _totalScore = mutableStateOf(engine.initialScore)
     val totalScore: State<Int> = _totalScore
 
     private val _totalDarts = mutableStateOf(0)
     val totalDarts: State<Int> = _totalDarts
+
+    private fun resetGame() {
+
+        _currentRoundHits.clear()
+        _roundHistory.clear()
+
+        _totalScore.value = engine.initialScore
+        _totalDarts.value = 0
+        _turnFinished.value = false
+    }
 
 
     val average: Float
@@ -34,12 +44,12 @@ class DartViewModel : ViewModel() {
             else (_totalScore.value.toFloat() / _totalDarts.value) * 3f
 
 
-    /*fun startGame(gameType: GameType) {
+    fun startGame(gameType: GameType) {
 
         engine = GameEngineFactory.create(gameType)
 
         resetGame()
-    }*/
+    }
 
     fun addHit(hit: DartHit) {
 

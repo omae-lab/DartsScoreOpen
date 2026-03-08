@@ -2,9 +2,12 @@ package com.example.dartsscore.engine
 
 import com.example.dartsscore.DartHit
 
-class CountUpEngine(
+open class CountUpEngine(
     private val maxRounds: Int? = 8
 ) : GameEngine {
+
+    override val initialScore: Int = 0
+
     override fun addHit(
         hit: DartHit,
         currentRoundHits: List<DartHit>,
@@ -92,30 +95,14 @@ class CountUpEngine(
         val newHistory = roundHistory.toMutableList()
         newHistory.add(currentRoundHits.toList())
 
+        val gameFinished =
+            maxRounds != null && newHistory.size >= maxRounds
+
         return GameEngine.FinishTurnResult(
             emptyList(),
             newHistory,
-            false
+            gameFinished
         )
     }
 
-    data class AddHitResult(
-        val roundHits: List<DartHit>,
-        val totalScore: Int,
-        val totalDarts: Int,
-        val turnFinished: Boolean
-    )
-
-    data class UndoResult(
-        val roundHits: List<DartHit>,
-        val roundHistory: List<List<DartHit>>,
-        val totalScore: Int,
-        val totalDarts: Int
-    )
-
-    data class FinishTurnResult(
-        val roundHits: List<DartHit>,
-        val roundHistory: List<List<DartHit>>,
-        val turnFinished: Boolean
-    )
 }

@@ -1,36 +1,33 @@
 package com.example.dartsscore.engine
 
 import com.example.dartsscore.data.entity.GameType
-//import com.example.dartsscore.model.GameType
 
 object GameEngineFactory {
 
     fun create(gameType: GameType): GameEngine {
+
         return when (gameType) {
 
             GameType.COUNT_UP ->
-                CountUpEngine(maxRounds = 8)
+                CountUpEngine()
 
             GameType.INFINITE_COUNT_UP ->
-                CountUpEngine(maxRounds = null)
-
+                InfiniteCountUpEngine()
 
             GameType.ZERO_ONE_301 ->
-                ZeroOneEngine(startScore = 301)
+                ZeroOneEngine(301)
 
             GameType.ZERO_ONE_501 ->
-                ZeroOneEngine(startScore = 501)
+                ZeroOneEngine(501)
 
             GameType.ZERO_ONE_701 ->
-                ZeroOneEngine(startScore = 701)
+                ZeroOneEngine(701)
 
             GameType.CRICKET ->
-                CricketEngine()
+                CountUpEngine() // 仮
 
             GameType.HALFIT ->
-                HalfitEngine()
-
-
+                CountUpEngine() // 仮
         }
     }
 }

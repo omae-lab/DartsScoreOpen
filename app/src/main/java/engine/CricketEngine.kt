@@ -4,6 +4,8 @@ import com.example.dartsscore.DartHit
 
 class CricketEngine : GameEngine {
 
+    override val initialScore: Int = 0
+
     override fun addHit(
         hit: DartHit,
         currentRoundHits: List<DartHit>,

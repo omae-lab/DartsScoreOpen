@@ -4,6 +4,8 @@ import com.example.dartsscore.DartHit
 
 interface GameEngine {
 
+    val initialScore: Int
+
     data class AddHitResult(
         val roundHits: List<DartHit>,
         val totalScore: Int,

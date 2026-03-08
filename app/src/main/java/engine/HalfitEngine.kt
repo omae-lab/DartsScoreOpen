@@ -4,6 +4,8 @@ import com.example.dartsscore.DartHit
 
 class HalfitEngine : GameEngine {
 
+    override val initialScore: Int = 20
+
     override fun addHit(
         hit: DartHit,
         currentRoundHits: List<DartHit>,
