@@ -4,22 +4,18 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.dartsscore.data.entity.GameType
+import ui.GameScreen
+import ui.GameSettingScreen
+import ui.HomeScreen
 import com.example.dartsscore.ui.theme.DartsScoreTheme
 
 class MainActivity : ComponentActivity() {
@@ -28,115 +24,62 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             DartsScoreTheme {
-                val dartViewModel: DartViewModel = viewModel()
-                Scaffold { innerPadding: PaddingValues ->
-                    CountUpScreen(
-                        viewModel = dartViewModel,
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                DartsApp()
             }
         }
     }
 }
 
 @Composable
-fun CountUpScreen(
-    viewModel: DartViewModel,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+fun DartsApp() {
+    val navController = rememberNavController()
+    val dartViewModel: DartViewModel = viewModel()
 
-        DartBoard(
-            hitHistory = viewModel.hitHistory,
-            onHit = { hit ->
-                viewModel.addHit(hit)
+    Scaffold { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = "home",
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            // Home画面
+            composable("home") {
+                HomeScreen(
+                    onCountUpInfinite = { navController.navigate("gameSetting/${GameType.INFINITE_COUNT_UP}") },
+                    onCountUp = { navController.navigate("gameSetting/${GameType.COUNT_UP}") },
+                    onZeroOne = { navController.navigate("gameSetting/${GameType.ZERO_ONE_301}") },
+                    onCricket = { navController.navigate("gameSetting/${GameType.CRICKET}") },
+                    onOther = { /*navController.navigate("gameSetting/${GameType.OTHER}") */},
+                    onHistory = { /* 過去ゲーム画面は後で実装 */ },
+                    onPlayer = { /* プレイヤー管理画面は後で実装 */ }
+                )
             }
-        )
 
-        Button(
-            onClick = { viewModel.undoLastHit() },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-        ) {
-            Text("UNDO", color = Color.White)
-        }
-
-        // 修正: currentScore -> totalScore
-        Text(
-            text = viewModel.totalScore.value.toString(),
-            fontSize = 72.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Green,
-            modifier = Modifier.fillMaxWidth(),
-            textAlign = TextAlign.Center
-        )
-
-        Text(
-            text = "AVG ${"%.2f".format(viewModel.average)}",
-            fontSize = 28.sp,
-            color = Color.Cyan,
-            modifier = Modifier.padding(top = 4.dp)
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            repeat(3) { index ->
-                val hit = viewModel.currentRoundHits.getOrNull(index)
-                Box(
-                    modifier = Modifier
-                        .size(80.dp)
-                        .background(Color.DarkGray, shape = RoundedCornerShape(8.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = hit?.score?.toString() ?: "-",
-                        fontSize = 28.sp,
-                        color = Color.White
-                    )
+            // GameSettingScreen
+            composable("gameSetting/{gameType}") { backStackEntry ->
+                val typeString = backStackEntry.arguments?.getString("gameType")
+                val gameType = try {
+                    GameType.valueOf(typeString ?: "INFINITE_COUNT_UP")
+                } catch (e: Exception) {
+                    GameType.INFINITE_COUNT_UP
                 }
+                GameSettingScreen(
+                    navController = navController,
+                    gameType = gameType,
+                    viewModel = dartViewModel
+                )
             }
-        }
 
-        if (viewModel.turnFinished.value) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = { viewModel.finishTurn() }) { Text("Next Round") }
-                Button(onClick = { viewModel.finishTurn() }) { Text("Next Player") }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(text = "History", fontSize = 16.sp, color = Color.LightGray)
-
-        val listState = rememberLazyListState()
-        LaunchedEffect(viewModel.roundHistory.size) {
-            if (viewModel.roundHistory.isNotEmpty()) {
-                listState.scrollToItem(viewModel.roundHistory.size - 1)
-            }
-        }
-
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-        ) {
-            itemsIndexed(viewModel.roundHistory) { index, round ->
-                val scores = round.map { it.score }
-                val roundTotal = scores.sum()
-                val scoreText = scores.joinToString(" / ")
-                Text(
-                    text = "Round ${index + 1}: $scoreText = $roundTotal",
-                    modifier = Modifier.padding(vertical = 4.dp),
-                    fontSize = 16.sp,
-                    color = Color.LightGray
+            // GameScreen
+            composable("gameScreen/{gameType}") { backStackEntry ->
+                val typeString = backStackEntry.arguments?.getString("gameType")
+                val gameType = try {
+                    GameType.valueOf(typeString ?: "INFINITE_COUNT_UP")
+                } catch (e: Exception) {
+                    GameType.INFINITE_COUNT_UP
+                }
+                GameScreen(
+                    gameId = gameType.ordinal.toLong(),
+                    viewModel = dartViewModel
                 )
             }
         }

@@ -1,7 +1,7 @@
 package com.example.dartsscore.data.dao
 
 import androidx.room.*
-import com.example.dartsscore.data.entity.Game
+import com.example.dartsscore.data.entity.*
 
 @Dao
 interface GameDao {
@@ -17,4 +17,9 @@ interface GameDao {
 
     @Query("UPDATE Game SET endTime = :endTime WHERE id = :gameId")
     suspend fun updateEndTime(gameId: Long, endTime: Long)
+
+    // 全履歴取得
+    @Transaction
+    @Query("SELECT * FROM Game WHERE id = :gameId")
+    suspend fun getGameFullHistory(gameId: Long): GameFullHistory
 }

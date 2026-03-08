@@ -9,20 +9,14 @@ interface ThrowDao {
     @Insert
     suspend fun insertThrow(throwData: Throw)
 
-    @Query("""
-        SELECT * FROM Throw
-        WHERE gameId = :gameId AND playerId = :playerId
-        ORDER BY timestamp ASC
-    """)
+    @Query("SELECT * FROM Throw WHERE gameId = :gameId AND playerId = :playerId ORDER BY timestamp ASC")
     fun getThrowsFlow(gameId: Long, playerId: Long): Flow<List<Throw>>
 
-    @Query("""
-        SELECT * FROM Throw
-        WHERE gameId = :gameId AND playerId = :playerId
-        ORDER BY timestamp DESC
-        LIMIT 1
-    """)
+    @Query("SELECT * FROM Throw WHERE gameId = :gameId AND playerId = :playerId ORDER BY timestamp DESC LIMIT 1")
     suspend fun getLastThrow(gameId: Long, playerId: Long): Throw?
+
+    @Query("SELECT * FROM Throw WHERE gameId = :gameId AND playerId = :playerId AND roundNumber = :roundNumber ORDER BY dartIndex ASC")
+    suspend fun getThrowsByRound(gameId: Long, playerId: Long, roundNumber: Int): List<Throw>
 
     @Delete
     suspend fun deleteThrow(throwData: Throw)
