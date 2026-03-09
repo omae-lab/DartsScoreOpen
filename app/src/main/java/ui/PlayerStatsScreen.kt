@@ -8,11 +8,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import com.example.dartsscore.viewmodel.PlayerViewModel
-import com.example.dartsscore.data.entity.Player
 
 @Composable
 fun PlayerStatsScreen(
-    player: Player
+    playerId: Long,
+    playerName: String
 ) {
 
     val context = LocalContext.current
@@ -25,15 +25,14 @@ fun PlayerStatsScreen(
     var t19Hits by remember { mutableStateOf(0) }
     var bullHits by remember { mutableStateOf(0) }
 
-    LaunchedEffect(player.id) {
+    LaunchedEffect(playerId) {
 
-        average = viewModel.getPlayerAverage(player.id)
-        throwCount = viewModel.getThrowCount(player.id)
+        average = viewModel.getPlayerAverage(playerId)
+        throwCount = viewModel.getThrowCount(playerId)
 
-        t20Hits = viewModel.countHitsByBed(player.id, "T20")
-        t19Hits = viewModel.countHitsByBed(player.id, "T19")
-        bullHits = viewModel.countHitsByBed(player.id, "BULL")
-
+        t20Hits = viewModel.countHitsByBed(playerId, "T20")
+        t19Hits = viewModel.countHitsByBed(playerId, "T19")
+        bullHits = viewModel.countHitsByBed(playerId, "BULL")
     }
 
     LazyColumn(
@@ -52,7 +51,7 @@ fun PlayerStatsScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                player.name,
+                playerName,
                 style = MaterialTheme.typography.headlineMedium
             )
 
@@ -74,7 +73,6 @@ fun PlayerStatsScreen(
             Text("T20 : $t20Hits")
             Text("T19 : $t19Hits")
             Text("Bull : $bullHits")
-
         }
     }
 }

@@ -1,5 +1,6 @@
 package ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -9,15 +10,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.dartsscore.viewmodel.PlayerViewModel
 import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavController
+import com.example.dartsscore.viewmodel.PlayerViewModel
+import com.example.dartsscore.data.entity.Player
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
-import com.example.dartsscore.data.entity.Player
 
 @Composable
-fun PlayerManagementScreen() {
+fun PlayerManagementScreen(
+    navController: NavController
+) {
 
     val context = LocalContext.current
     val playerViewModel = remember { PlayerViewModel(context) }
@@ -84,6 +88,7 @@ fun PlayerManagementScreen() {
 
                     PlayerRow(
                         player = player,
+                        navController = navController,
                         viewModel = playerViewModel,
                         onDeleteConfirmed = { deleted ->
 
@@ -113,7 +118,6 @@ fun PlayerManagementScreen() {
                     )
 
                     Divider()
-
                 }
             }
         }
@@ -123,6 +127,7 @@ fun PlayerManagementScreen() {
 @Composable
 fun PlayerRow(
     player: Player,
+    navController: NavController,
     viewModel: PlayerViewModel,
     onDeleteConfirmed: (Player) -> Unit
 ) {
@@ -151,7 +156,13 @@ fun PlayerRow(
 
         Text(
             text = player.name,
-            modifier = Modifier.weight(2f)
+            modifier = Modifier
+                .weight(2f)
+                .clickable {
+                    navController.navigate(
+                        "playerStats/${player.id}/${player.name}"
+                    )
+                }
         )
 
         Text(
@@ -179,19 +190,11 @@ fun PlayerRow(
     if (showDialog) {
 
         AlertDialog(
-
             onDismissRequest = { showDialog = false },
-
-            title = {
-                Text("Delete Player")
-            },
-
-            text = {
-                Text("${player.name} を削除しますか？")
-            },
+            title = { Text("Delete Player") },
+            text = { Text("${player.name} を削除しますか？") },
 
             confirmButton = {
-
                 Button(
                     onClick = {
                         onDeleteConfirmed(player)
@@ -203,11 +206,8 @@ fun PlayerRow(
             },
 
             dismissButton = {
-
                 OutlinedButton(
-                    onClick = {
-                        showDialog = false
-                    }
+                    onClick = { showDialog = false }
                 ) {
                     Text("Cancel")
                 }
