@@ -19,6 +19,8 @@ data class Throw(
     val dartIndex: Int,
     val segment: Int,
     val multiplier: Int,
+    val score: Int,
+    val bed: String,
     val hitX: Float,
     val hitY: Float,
     val timestamp: Long

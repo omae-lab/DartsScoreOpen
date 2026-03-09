@@ -2,6 +2,7 @@ package com.example.dartsscore.data.dao
 
 import androidx.room.*
 import com.example.dartsscore.data.entity.Player
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PlayerDao {
@@ -10,4 +11,7 @@ interface PlayerDao {
 
     @Query("SELECT * FROM Player")
     suspend fun getAll(): List<Player>
+
+    @Delete
+    suspend fun delete(player: Player)
 }

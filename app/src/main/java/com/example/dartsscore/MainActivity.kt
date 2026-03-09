@@ -17,6 +17,7 @@ import ui.GameScreen
 import ui.GameSettingScreen
 import ui.HomeScreen
 import com.example.dartsscore.ui.theme.DartsScoreTheme
+import ui.PlayerManagementScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,7 +51,7 @@ fun DartsApp() {
                     onCricket = { navController.navigate("gameSetting/${GameType.CRICKET}") },
                     onOther = { /*navController.navigate("gameSetting/${GameType.OTHER}") */},
                     onHistory = { /* 過去ゲーム画面は後で実装 */ },
-                    onPlayer = { /* プレイヤー管理画面は後で実装 */ }
+                    onPlayer = { navController.navigate("playerManagement") }
                 )
             }
 
@@ -81,6 +82,11 @@ fun DartsApp() {
                     gameId = gameType.ordinal.toLong(),
                     viewModel = dartViewModel
                 )
+            }
+
+            //PlayerManagementScreen
+            composable("playerManagement") {
+                PlayerManagementScreen()
             }
         }
     }

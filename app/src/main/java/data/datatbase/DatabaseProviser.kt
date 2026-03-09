@@ -13,7 +13,10 @@ object DatabaseProvider {
                 context.applicationContext,
                 AppDatabase::class.java,
                 "darts_database"
-            ).build()
+            )
+                .fallbackToDestructiveMigration()
+                //★開発中のみ。完成したら削除しないとデータ飛ぶ可能性あり。完成したらMigrationを行う。
+                .build()
             INSTANCE = instance
             instance
         }

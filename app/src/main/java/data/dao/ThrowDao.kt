@@ -20,4 +20,30 @@ interface ThrowDao {
 
     @Delete
     suspend fun deleteThrow(throwData: Throw)
+
+    @Query("""
+        SELECT AVG(score)
+        FROM Throw
+        WHERE playerId = :playerId
+    """)
+    suspend fun getPlayerAverage(playerId: Long): Double?
+
+    @Query("""
+        SELECT COUNT(*)
+        FROM Throw
+        WHERE playerId = :playerId
+    """)
+    suspend fun getThrowCount(playerId: Long): Int
+
+    @Query("""
+        SELECT COUNT(*)
+        FROM Throw
+        WHERE playerId = :playerId
+        AND bed = :bed
+    """)
+    suspend fun countHitsByBed(
+        playerId: Long,
+        bed: String
+    ): Int
+
 }
